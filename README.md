@@ -6,21 +6,44 @@ Instead of fighting the endless scroll habit, Doomreader embraces it, turning co
 
 The project is built as a **Progressive Web App (PWA)**, meaning it works offline, can be installed, and is optimized for performance and daily use.
 
+
+## 💡 Inspiration
+
+Doomreader is inspired by [xikipedia.org](https://xikipedia.org), a project that reimagines Wikipedia as an infinite, scroll-based reading experience.
+
+Xikipedia demonstrates how continuous scrolling can transform the way long-form content is consumed, making deep reading feel more natural and less fragmented.
+
+Doomreader builds on this idea and applies it to personal libraries, documents, and books, extending the concept into an offline-first, installable reading app.
+
+
 ---
 
 ## ✨ Concept
 
 - Continuous vertical reading
-- Content split into readable blocks
+- Content split into readable blocks (chunks)
+- Bookmark navigation
 - No traditional pagination
 - Mobile-first approach
-- Social-feed-like interaction applied to deep reading
 
-Ideal for:
-- Long books
-- Essays
-- Documentation
-- Articles
+
+## 🎮 Gamification (Planned)
+
+Doomreader will gradually introduce light gamification elements to encourage consistent reading without turning it into a distraction.
+
+The goal is not competition or pressure, but motivation, rhythm, and habit-building.
+
+Planned ideas include:
+
+- 🧩 **Reading streaks**  
+  Track consecutive reading days and long scroll sessions.
+
+- 📊 **Progress milestones**  
+  Visual markers for completed chapters, sections, or scroll depth.
+
+- 🏆 **Achievements & badges**  
+  Rewards for finishing books, reading sessions, or maintaining streaks.
+
 
 ---
 
