@@ -1,38 +1,54 @@
-# doomreader
+# Doomreader 📖🌀
 
-This template should help get you started developing with Vue 3 in Vite.
+**Doomreader** is an experimental document reader (EPUB / DOC / long-form text) that rethinks reading through the lens of *doom scrolling*.
 
-## Recommended IDE Setup
+Instead of fighting the endless scroll habit, Doomreader embraces it, turning continuous scrolling into a focused, frictionless reading experience designed for mobile devices and long sessions.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+The project is built as a **Progressive Web App (PWA)**, meaning it works offline, can be installed, and is optimized for performance and daily use.
 
-## Recommended Browser Setup
+---
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## ✨ Concept
 
-## Customize configuration
+- Continuous vertical reading
+- Content split into readable blocks
+- No traditional pagination
+- Mobile-first approach
+- Social-feed-like interaction applied to deep reading
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+Ideal for:
+- Long books
+- Essays
+- Documentation
+- Articles
 
-## Project Setup
+---
+
+## 🧱 Tech Stack
+
+- **Vue 3** — Main framework
+- **Vite** — Build tool and dev environment
+- **Pinia** — State management
+- **Tailwind CSS** — Styling and layout
+- **IndexedDB (idb)** — Local persistence for books, progress, and preferences
+- **PWA** — Offline support and installability
+
+---
+
+## 🚀 Key Features
+
+- 📚 EPUB / DOC import (work in progress)
+- 🔄 Doom-scroll style infinite reading
+- 💾 Automatic reading progress saving
+- 📱 Installable as an app (PWA)
+- ⚡ Fast loading and offline usage
+- 🎨 Minimal UI focused on readability
+
+---
+
+## 🛠️ Project Setup
+
+Install dependencies:
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
