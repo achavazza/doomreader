@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #000;
+    /* Dark background for that premium feel */
+    color: #fff;
+    /* Stronger snap */
+    /* Account for sticky header */
+    scroll-behavior: smooth;
+}
