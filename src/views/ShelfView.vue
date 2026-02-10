@@ -91,7 +91,7 @@ const moveBook = (id, direction, e) => {
                      <h2 class="text-2xl font-bold mb-2 text-gray-200 group-hover:text-white transition">Shelf is Empty</h2>
                      <p class="text-gray-500 mb-8 max-w-sm text-center group-hover:text-gray-400 transition">Start by adding your first book to the collection.</p>
                      
-                     <div class="flex items-center gap-2 bg-white text-black group-hover:bg-gray-200 font-bold py-3 px-6 rounded-full transition transform group-hover:scale-105 shadow-lg">
+                     <div class="flex items-center gap-2 bg-white text-black group-hover:bg-gray-200 font-bold py-3 px-3 rounded-full transition transform group-hover:scale-105 shadow-lg">
                         <Plus class="w-5 h-5" />
                         <span>Add Book Now</span>
                     </div>
@@ -104,14 +104,14 @@ const moveBook = (id, direction, e) => {
                         @click="openBook(book.id)"
                         class="group relative cursor-pointer"
                     >
-                        <div class="aspect-[2/3] bg-gray-900 rounded-xl overflow-hidden mb-3 border border-gray-800 group-hover:border-gray-500 transition shadow-lg group-hover:shadow-blue-500/10">
+                        <div class="relative aspect-[2/3] bg-gray-900 rounded-xl overflow-hidden mb-3 border border-gray-800 group-hover:border-gray-500 transition shadow-lg group-hover:shadow-blue-500/10">
                             <img v-if="store.covers[book.id]" :src="store.covers[book.id]" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                             <div v-else class="w-full h-full flex items-center justify-center text-gray-700">
                                 <BookIcon class="w-12 h-12" />
                             </div>
                             
                             <!-- Overlay Actions -->
-                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-end mb-4 justify-center gap-2">
                                  <button @click="moveBook(book.id, 'up', $event)" class="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition" title="Move Up">
                                     <ChevronUp class="w-4 h-4" />
                                  </button>

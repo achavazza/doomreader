@@ -19,7 +19,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['index-change', 'toggle-bookmark'])
+const emit = defineEmits(['index-change', 'toggle-bookmark', 'scroll-complete'])
 
 const scroller = ref(null)
 const HEADER_OFFSET = 80 // Threshold for a chunk to be considered "read" or "on top"
@@ -29,79 +29,129 @@ const isReady = ref(false)
 let scrollPauseTimeout = null
 
 const attemptRefinement = (targetIndex, attempts = 0) => {
-    const el = document.querySelector(`.chunk-card-wrapper[data-index="${targetIndex}"]`)
-    if (el) {
-        const rect = el.getBoundingClientRect()
-        const currentTop = rect.top + window.scrollY
-        const targetTop = currentTop - HEADER_OFFSET
+    return new Promise((resolve) => {
+        const el = document.querySelector(`.chunk-card-wrapper[data-index="${targetIndex}"]`)
         
-        if (Math.abs(rect.top - HEADER_OFFSET) > 5) {
-                window.scrollTo({ top: targetTop, behavior: 'auto' })
-        }
-        
-        // Success! Unlock after short delay
-        setTimeout(() => { 
-            isProgrammaticScroll.value = false 
+        if (el) {
+            const rect = el.getBoundingClientRect()
+            const viewportCenterY = window.innerHeight / 2
+            
+            // Calculate how far the center of the element is from the center of the viewport
+            const elementCenter = rect.top + rect.height / 2
+            const diff = elementCenter - viewportCenterY
+            
+            // If the difference is significant, scroll exactly that amount
+            if (Math.abs(diff) > 2) {
+                window.scrollBy({ top: diff, behavior: 'auto' })
+            }
+            
+            // Wait for settle
+            setTimeout(() => {
+                const currentActive = getActiveIndexAtCenter()
+                
+                if (currentActive === targetIndex) {
+                    console.log(`Timeline: Precisely landed on ${targetIndex}`)
+                    isProgrammaticScroll.value = false 
+                    isReady.value = true
+                    emit('scroll-complete')
+                    resolve(true)
+                } 
+                else if (attempts >= 15) {
+                    console.warn(`Timeline: Refinement limit reached for ${targetIndex}. At ${currentActive}`)
+                    isProgrammaticScroll.value = false 
+                    isReady.value = true
+                    emit('scroll-complete')
+                    resolve(false)
+                }
+                else {
+                    attemptRefinement(targetIndex, attempts + 1).then(resolve)
+                }
+            }, 100 + (attempts * 10))
+        } else if (attempts < 20) {
+            // Not in DOM, keep trying to force it in
+            if (scroller.value && scroller.value.scrollToItem) {
+                scroller.value.scrollToItem(targetIndex)
+            }
+            setTimeout(() => attemptRefinement(targetIndex, attempts + 1).then(resolve), 200)
+        } else {
+            console.error(`Timeline: Element ${targetIndex} not found in DOM after 20 attempts`)
+            isProgrammaticScroll.value = false
             isReady.value = true
-        }, 100)
-    } else if (attempts < 5) {
-        // Retry logic
-        setTimeout(() => attemptRefinement(targetIndex, attempts + 1), 200)
-    } else {
-        // Give up, but enable observer so user can at least scroll manually
-        isProgrammaticScroll.value = false
-        isReady.value = true
-    }
+            emit('scroll-complete')
+            resolve(false)
+        }
+    })
 }
 
-const scrollToIndex = (index, retryCount = 0) => {
-    // If scroller ref isn't ready, wait and retry
+const scrollToIndex = async (index, retryCount = 0) => {
     if (!scroller.value) {
         if (retryCount < 20) {
-            setTimeout(() => scrollToIndex(index, retryCount + 1), 50)
-            return
+            return new Promise(resolve => setTimeout(() => scrollToIndex(index, retryCount + 1).then(resolve), 50))
         }
-        // Emergency unlock so user isn't stuck
         isReady.value = true
-        return
+        emit('scroll-complete')
+        return Promise.resolve(false)
     }
     
     try {
         if (scrollPauseTimeout) clearTimeout(scrollPauseTimeout)
         isProgrammaticScroll.value = true
+        lastProgrammaticStart = Date.now()
         
         const targetIndex = parseInt(index)
 
-        // 1. Initial Jump (Estimate)
-        const estimate = targetIndex * 300 
+        // 1. Initial Assisted Jump (Teleport)
+        // Helps the virtual scroller find the general area by moving viewport
+        const estimate = targetIndex * 600 
         window.scrollTo({ top: estimate, behavior: 'auto' })
 
-        // 2. Library Jump
+        // 2. Virtual Scroller Target
         if (scroller.value && scroller.value.scrollToItem) {
             scroller.value.scrollToItem(targetIndex)
         }
         
-        // 3. Start Refinement Loop (Delayed)
-        setTimeout(() => attemptRefinement(targetIndex), 500)
+        // 3. Refinement Loop
+        return new Promise(resolve => {
+            setTimeout(() => {
+                attemptRefinement(targetIndex).then(resolve)
+            }, 300)
 
-        // Safety unlock fallback
-        scrollPauseTimeout = setTimeout(() => {
-            if (isProgrammaticScroll.value) {
-                console.log("NavDebug: Safety unlock")
-                isProgrammaticScroll.value = false
-                isReady.value = true
-            }
-        }, 3000) // Increased safety timeout
+            scrollPauseTimeout = setTimeout(() => {
+                if (isProgrammaticScroll.value) {
+                    isProgrammaticScroll.value = false
+                    isReady.value = true
+                    emit('scroll-complete')
+                    resolve(false)
+                }
+            }, 8000)
+        })
     } catch (err) {
         console.error("Timeline: Navigation failed", err)
         isProgrammaticScroll.value = false
         isReady.value = true
+        emit('scroll-complete')
+        return Promise.resolve(false)
     }
 }
 
 // User interaction breaks the lock
-const unlock = () => {
+let lastProgrammaticStart = 0
+
+const unlock = (e) => {
+    // If we just started a programmatic scroll in the last 2000ms, ignore touch/mousedown
+    if (Date.now() - lastProgrammaticStart < 2000) return
+
+    // CRITICAL: Ignore if the click/touch was on a navigation button or the fixed footer/sidebar
+    if (e && e.target) {
+        const isNavUI = e.target.closest('.fixed') || e.target.closest('aside') || e.target.closest('header')
+        if (isNavUI) {
+            console.log("Timeline: Ignoring unlock trigger from Navigation UI")
+            return
+        }
+    }
+    
     if (isProgrammaticScroll.value || !isReady.value) {
+        console.log("Timeline: User manually broke the lock via", e?.type, "on", e?.target?.tagName)
         isProgrammaticScroll.value = false
         isReady.value = true
     }
@@ -113,16 +163,15 @@ onMounted(() => {
         history.scrollRestoration = 'manual'
     }
 
-    // If starting at 0, we are ready immediately. 
-    // If starting elsewhere, ReaderView calls scrollToIndex which sets isReady=true when done.
     if (props.initialIndex === 0) {
         isReady.value = true
     }
 
-    setupObserver()
+    checkActive() // Initial check
     window.addEventListener('wheel', unlock, { passive: true })
     window.addEventListener('touchstart', unlock, { passive: true })
     window.addEventListener('mousedown', unlock, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
 })
 
 onUnmounted(() => {
@@ -132,72 +181,74 @@ onUnmounted(() => {
     window.removeEventListener('wheel', unlock)
     window.removeEventListener('touchstart', unlock)
     window.removeEventListener('mousedown', unlock)
+    window.removeEventListener('scroll', onScroll)
 })
 
 defineExpose({ scrollToIndex })
 
-let observer = null
+let scrollTimeout = null
 
-const setupObserver = () => {
-    if (observer) observer.disconnect()
-
-    // IntersectionObserver to detect which chunk is currently visible at the top
-    observer = new IntersectionObserver((entries) => {
-        if (isProgrammaticScroll.value || !isReady.value) return 
-        
-        // We want the chunk that is at the top of the viewport
-        let bestCandidate = null
-        let minDistance = Infinity
-
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const rect = entry.target.getBoundingClientRect()
-                // Distance to the "active reading line" (HEADER_OFFSET)
-                const distance = Math.abs(rect.top - HEADER_OFFSET)
-                
-                // If it's near the top or overlapping the header, it's a candidate
-                if (rect.top < window.innerHeight * 0.5) {
-                    if (distance < minDistance) {
-                        minDistance = distance
-                        bestCandidate = entry.target
-                    }
-                }
-            }
-        })
-
-        if (bestCandidate) {
-            const index = bestCandidate.getAttribute('data-index')
-            if (index !== null) {
-                const idx = parseInt(index)
-                if (idx === 0 && !isReady.value) {
-                     return
-                }
-                
-                emit('index-change', idx)
-            }
+const getActiveIndexAtCenter = () => {
+    // Viewport-based center detection (pure and absolute)
+    const viewportCenterY = window.innerHeight / 2
+    
+    // Get all rendered wrappers
+    const wrappers = document.querySelectorAll('.chunk-card-wrapper')
+    
+    // 1. Primary Check: Which chunk strictly overlaps the viewport center?
+    for (const wrapper of wrappers) {
+        const rect = wrapper.getBoundingClientRect()
+        if (rect.top < viewportCenterY && rect.bottom > viewportCenterY) {
+            const index = parseInt(wrapper.getAttribute('data-index'))
+            if (!isNaN(index)) return index
         }
-    }, {
-        root: null,
-        rootMargin: `0px 0px -50% 0px`, // Detect in the top half
-        threshold: [0, 0.1, 0.2]
-    })
+    }
+    
+    // 2. Secondary Check: If none strictly overlap (e.g. gaps), find the closest one
+    let closestIndex = null
+    let minDistance = Infinity
+    
+    for (const wrapper of wrappers) {
+        const rect = wrapper.getBoundingClientRect()
+        const elementCenter = rect.top + rect.height / 2
+        const distance = Math.abs(elementCenter - viewportCenterY)
+        
+        if (distance < minDistance) {
+            minDistance = distance
+            const index = parseInt(wrapper.getAttribute('data-index'))
+            if (!isNaN(index)) closestIndex = index
+        }
+    }
+    
+    return closestIndex
+}
 
-    // Observe all currently rendered chunks
-    // Since we use a virtual scroller, we need to re-observe when items are rendered
+const checkActive = () => {
+    if (isProgrammaticScroll.value || !isReady.value) return
+
+    const index = getActiveIndexAtCenter()
+    if (index !== null) {
+        emit('index-change', index)
+    }
+}
+
+const onScroll = () => {
+    if (scrollTimeout) return
+    scrollTimeout = requestAnimationFrame(() => {
+        checkActive()
+        scrollTimeout = null
+    })
 }
 
 const onVisibleUpdate = () => {
-    // This is called by DynamicScroller when visible items change
-    // Re-observe elements
-    const elements = document.querySelectorAll('.chunk-card-wrapper')
-    elements.forEach(el => observer?.observe(el))
+    // DynamicScroller updated visible items
+    // Good time to check active index as well
+    checkActive()
 }
 
-
-
 watch(() => props.chunks, () => {
-    // Reset observer if items change dramatically
-    setupObserver()
+    // Chunks changed, check active
+    nextTick(checkActive)
 }, { deep: false })
 
 </script>
@@ -244,5 +295,8 @@ watch(() => props.chunks, () => {
 .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+}
+.chunk-card-wrapper {
+    scroll-margin-top: 120px; /* Ensure scrolling to start respects header */
 }
 </style>

@@ -71,7 +71,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="border-y border-gray-800/10 hover:border-gray-800 p-4 hover:bg-gray-900/50 transition-colors relative group min-h-[50px]">
+  <div class="border-y border-gray-800/10 hover:border-gray-800 px-8 py-10 hover:bg-gray-900/50 transition-colors relative group min-h-[50px]">
     <!-- Debug Chunk Number -->
     <div class="absolute left-2 top-2 text-[10px] font-mono text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
         #{{ index }}
