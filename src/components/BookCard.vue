@@ -3,6 +3,7 @@ import { Bookmark, Image as ImageIcon, Loader } from 'lucide-vue-next'
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storageService } from '../services/storageService'
+import { CONFIG } from '../config'
 
 const props = defineProps({
   item: {

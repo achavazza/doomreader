@@ -54,6 +54,7 @@ Planned ideas include:
 - **Pinia** — State management
 - **Tailwind CSS** — Styling and layout
 - **IndexedDB (idb)** — Local persistence for books, progress, and preferences
+-- **Virtua**  — Virtual Scroller https://github.com/inokawa/virtua
 - **PWA** — Offline support and installability
 
 ---

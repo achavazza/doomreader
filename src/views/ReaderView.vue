@@ -30,12 +30,12 @@ const tryInitialScroll = async (retries = 0) => {
     if (timelineRef.value) {
         initialScrollStarted.value = true
         isNavigating.value = true
-        console.log(`Reader: Starting initial scroll to ${currentIndex.value}`)
+        if(DEBUG_MODE){console.log(`Reader: Starting initial scroll to ${currentIndex.value}`)}
         await timelineRef.value.scrollToIndex(currentIndex.value)
         initialScrollComplete.value = true
         isInitializing.value = false
         isNavigating.value = false
-        console.log("Reader: Initial scroll complete")
+        if(DEBUG_MODE){console.log("Reader: Initial scroll complete")}
     } else if (retries < 30) {
         setTimeout(() => tryInitialScroll(retries + 1), 50)
     } else {
@@ -136,7 +136,9 @@ const navigateToBookmark = (direction) => {
     if (direction === 'next') target = nextBookmarkIndex.value
 
     if (target !== null) {
-        console.log(`Reader: Navigating to bookmark at index ${target} (direction: ${direction})`)
+        if(DEBUG_MODE){
+            console.log(`Reader: Navigating to bookmark at index ${target} (direction: ${direction})`)
+        }
         scrollTo(target)
     }
 }
@@ -172,7 +174,7 @@ const scrollTo = async (index) => {
             </template>
         </StickySidebar>
 
-        <main class="w-full max-w-[650px] border-x border-gray-800 min-h-screen relative flex flex-col">
+        <div class="w-full max-w-[650px] border-x border-gray-800 relative">
             <!-- Loading Overlay -->
             <LoadingSpinner 
                 v-if="store.loading || isInitializing" 
@@ -207,7 +209,7 @@ const scrollTo = async (index) => {
                 @index-change="onVisibleIndexChange"
                 @toggle-bookmark="toggleBookmark"
             />
-        </main>
+        </div>
 
         <!-- New Mobile/Fixed Footer -->
         <div class="fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-t border-gray-800 px-4 py-3 flex lg:hidden flex-col gap-2 shadow-2xl safe-area-pb">
