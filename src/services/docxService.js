@@ -1,4 +1,5 @@
 import mammoth from 'mammoth';
+import { CONFIG } from '../config';
 
 /**
  * Parses a .docx file and extracts text chunks.
@@ -74,7 +75,7 @@ export async function parseDocx(fileData) {
             });
         } else if (['P', 'LI', 'BLOCKQUOTE'].includes(tagName)) {
             if (text.length > 0) {
-                if (buffer.text.length + text.length > 800) {
+                if (buffer.text.length + text.length > CONFIG.CHUNK_SIZE_LIMIT) {
                     flushBuffer();
                     buffer.text = text;
                 } else {

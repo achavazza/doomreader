@@ -1,4 +1,5 @@
 import ePub from 'epubjs'
+import { CONFIG } from '../config'
 
 /**
  * Resolves a relative path to an absolute path within the EPUB archive.
@@ -192,7 +193,7 @@ export async function parseEpub(fileData) {
                     Array.from(node.children).forEach(traverse)
                 } else {
                     // It's a "leaf" block or a simple paragraph/div
-                    if (buffer.text.length + text.length > 1000) {
+                    if (buffer.text.length + text.length > CONFIG.CHUNK_SIZE_LIMIT) {
                         flushBuffer(currentChapterTitle)
                         buffer.text = text
                     } else {

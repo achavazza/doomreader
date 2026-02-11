@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import StickySidebar from '../components/StickySidebar.vue'
 import Timeline from '../components/Timeline.vue'
+import { CONFIG } from '../config'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { ArrowLeft, ChevronUp, ChevronDown, Bookmark, List, Settings } from 'lucide-vue-next'
 
@@ -20,11 +21,15 @@ const timelineRef = ref(null)
 const isBookLoaded = ref(false)
 const initialScrollComplete = ref(false)
 const isNavigating = ref(false)
+const debugMode = ref(CONFIG.DEBUG_MODE)
 
+const initialScrollStarted = ref(false)
 const tryInitialScroll = async (retries = 0) => {
+    if (initialScrollStarted.value) return
     if (timelineRef.value) {
+        initialScrollStarted.value = true
         isNavigating.value = true
-        // Wait for the scroll to complete
+        console.log(`Reader: Starting initial scroll to ${currentIndex.value}`)
         await timelineRef.value.scrollToIndex(currentIndex.value)
         initialScrollComplete.value = true
         isNavigating.value = false
@@ -32,7 +37,6 @@ const tryInitialScroll = async (retries = 0) => {
     } else if (retries < 30) {
         setTimeout(() => tryInitialScroll(retries + 1), 50)
     } else {
-        // Fallback
         initialScrollComplete.value = true
     }
 }
@@ -51,7 +55,7 @@ const loadBookData = async () => {
         // Wait for Vue to render Timeline and for VirtualScroller to calculate height
         setTimeout(() => {
             tryInitialScroll()
-        }, 300) 
+        }, 500) 
     } catch (e) {
         console.error("Failed to load book", e)
         router.push('/')
@@ -129,6 +133,7 @@ const navigateToBookmark = (direction) => {
     if (direction === 'next') target = nextBookmarkIndex.value
 
     if (target !== null) {
+        console.log(`Reader: Navigating to bookmark at index ${target} (direction: ${direction})`)
         scrollTo(target)
     }
 }
@@ -195,6 +200,7 @@ const scrollTo = async (index) => {
                 :chunks="chunks" 
                 :initial-index="currentIndex"
                 :bookmarks="bookMetadata?.bookmarks || []"
+                :debug-mode="debugMode"
                 @index-change="onVisibleIndexChange"
                 @toggle-bookmark="toggleBookmark"
             />
@@ -221,7 +227,7 @@ const scrollTo = async (index) => {
                  <div class="flex items-center gap-3">
                     <button 
                         @click="navigateToBookmark('prev')"
-                        :disabled="prevBookmarkIndex === null"
+                        :disabled="prevBookmarkIndex === null || isNavigating"
                         class="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition active:scale-95 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
                         aria-label="Previous Bookmark"
                     >
@@ -239,7 +245,7 @@ const scrollTo = async (index) => {
 
                     <button 
                         @click="navigateToBookmark('next')"
-                        :disabled="nextBookmarkIndex === null"
+                        :disabled="nextBookmarkIndex === null || isNavigating"
                         class="p-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition active:scale-95 flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none"
                         aria-label="Next Bookmark"
                     >

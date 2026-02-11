@@ -110,7 +110,7 @@ onUnmounted(() => {
     <!-- Bookmark Button -->
     <button 
         @click="$emit('bookmark', item)"
-        class="absolute bottom-2 right-2 transition-all duration-300 p-2 rounded-full"
+        class="absolute top-2 right-2 transition-all duration-300 p-2 rounded-full"
         :class="isBookmarked ? 'text-blue-500 scale-110 opacity-100' : 'text-gray-700 hover:text-blue-500 opacity-0 group-hover:opacity-100'"
         title="Bookmark this position"
     >
