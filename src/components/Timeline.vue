@@ -53,7 +53,7 @@ const scrollToIndex = async (index, retryCount = 0) => {
             isProgrammaticScroll.value = false
             return Promise.resolve(false)
         }
-        if(DEBUG_MODE){
+        if(props.debugMode){
             console.log(`Timeline: Navigating to chunk ${targetIndex} (Virtua VList)`)
         }
         return new Promise(async (resolve) => {
@@ -75,7 +75,7 @@ const scrollToIndex = async (index, retryCount = 0) => {
             // Safety timeout
             scrollPauseTimeout = setTimeout(() => {
                 if (isProgrammaticScroll.value && scrollId === currentScrollId) {
-                    if(DEBUG_MODE){
+                    if(props.debugMode){
                         console.warn(`Timeline: Navigation to ${targetIndex} timed out`)
                     }
                     isProgrammaticScroll.value = false

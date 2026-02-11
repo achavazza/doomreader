@@ -30,12 +30,12 @@ const tryInitialScroll = async (retries = 0) => {
     if (timelineRef.value) {
         initialScrollStarted.value = true
         isNavigating.value = true
-        if(DEBUG_MODE){console.log(`Reader: Starting initial scroll to ${currentIndex.value}`)}
+        if (debugMode.value) { console.log(`Reader: Starting initial scroll to ${currentIndex.value}`) }
         await timelineRef.value.scrollToIndex(currentIndex.value)
         initialScrollComplete.value = true
         isInitializing.value = false
         isNavigating.value = false
-        if(DEBUG_MODE){console.log("Reader: Initial scroll complete")}
+        if (debugMode.value) { console.log("Reader: Initial scroll complete") }
     } else if (retries < 30) {
         setTimeout(() => tryInitialScroll(retries + 1), 50)
     } else {
@@ -136,7 +136,7 @@ const navigateToBookmark = (direction) => {
     if (direction === 'next') target = nextBookmarkIndex.value
 
     if (target !== null) {
-        if(DEBUG_MODE){
+        if (debugMode.value) {
             console.log(`Reader: Navigating to bookmark at index ${target} (direction: ${direction})`)
         }
         scrollTo(target)
