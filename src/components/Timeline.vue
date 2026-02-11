@@ -145,34 +145,39 @@ const scrollToIndex = async (index, retryCount = 0) => {
         
         const scrollId = ++currentScrollId
         const targetIndex = parseInt(index)
-        
         if (isNaN(targetIndex)) {
             console.error("Timeline: Invalid index for navigation", index)
             isProgrammaticScroll.value = false
             return Promise.resolve(false)
         }
 
-        // Use estimate from config
         const estimate = targetIndex * CONFIG.CHUNK_HEIGHT_ESTIMATE
         console.log(`Timeline: Navigating to chunk ${targetIndex} (ID: ${scrollId}). Estimate: ${estimate}`)
 
-        return new Promise(resolve => {
-            // 1. Initial moderate jump to trigger virtual scroller logic
+        return new Promise(async (resolve) => {
+            // 1. Initial jump to proximity
             window.scrollTo({ top: estimate, behavior: 'auto' })
 
-            // 2. Call scroller's native scrollToItem
+            // 2. Wait for scroller and document height to settle
+            // If scrollY is 0 but estimate > 0, the scroller hasn't expanded the height yet
+            let heightRetry = 0
+            while (window.scrollY === 0 && estimate > 500 && heightRetry < 10) {
+                console.log(`Timeline: Stuck at 0 (Attempt ${heightRetry}). Waiting for scroller height...`)
+                await new Promise(r => setTimeout(r, 150))
+                window.scrollTo({ top: estimate, behavior: 'auto' })
+                heightRetry++
+            }
+
+            // 3. Inform the scroller
+            if (scroller.value?.scrollToItem) {
+                scroller.value.scrollToItem(targetIndex)
+            }
+
+            // 4. Start refinement after a settle period
             setTimeout(() => {
                 if (scrollId !== currentScrollId) return resolve(false)
-                
-                if (scroller.value && scroller.value.scrollToItem) {
-                    scroller.value.scrollToItem(targetIndex)
-                }
-                
-                // 3. Start refinement loop after a short wait for rendering
-                setTimeout(() => {
-                    attemptRefinement(targetIndex, 0, scrollId).then(resolve)
-                }, 400) // Slightly more time for virtual scroller to render
-            }, 100)
+                attemptRefinement(targetIndex, 0, scrollId).then(resolve)
+            }, 300)
 
             // Safety timeout
             scrollPauseTimeout = setTimeout(() => {
@@ -183,7 +188,7 @@ const scrollToIndex = async (index, retryCount = 0) => {
                     emit('scroll-complete')
                     resolve(false)
                 }
-            }, 8000)
+            }, 10000)
         })
     } catch (err) {
         console.error("Timeline: Navigation failed", err)

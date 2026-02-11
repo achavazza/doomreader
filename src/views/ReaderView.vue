@@ -21,6 +21,7 @@ const timelineRef = ref(null)
 const isBookLoaded = ref(false)
 const initialScrollComplete = ref(false)
 const isNavigating = ref(false)
+const isInitializing = ref(true)
 const debugMode = ref(CONFIG.DEBUG_MODE)
 
 const initialScrollStarted = ref(false)
@@ -32,12 +33,14 @@ const tryInitialScroll = async (retries = 0) => {
         console.log(`Reader: Starting initial scroll to ${currentIndex.value}`)
         await timelineRef.value.scrollToIndex(currentIndex.value)
         initialScrollComplete.value = true
+        isInitializing.value = false
         isNavigating.value = false
         console.log("Reader: Initial scroll complete")
     } else if (retries < 30) {
         setTimeout(() => tryInitialScroll(retries + 1), 50)
     } else {
         initialScrollComplete.value = true
+        isInitializing.value = false
     }
 }
 
@@ -172,9 +175,9 @@ const scrollTo = async (index) => {
         <main class="w-full max-w-[650px] border-x border-gray-800 min-h-screen relative flex flex-col">
             <!-- Loading Overlay -->
             <LoadingSpinner 
-                v-if="store.loading" 
+                v-if="store.loading || isInitializing" 
                 fullscreen 
-                message="Loading Book..." 
+                :message="isInitializing ? 'Preparing scroller...' : 'Loading Book...'" 
                 sub-message="Tip: If this takes too long, re-adding the book will skip slow image processing."
             />
 
