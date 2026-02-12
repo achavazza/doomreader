@@ -150,6 +150,10 @@ export async function parseEpub(fileData) {
         }
     }
 
+    // -----------------------------
+    // OLD TRAVERSE (backup)
+    // -----------------------------
+    /*
     // TRAVERSAL: More robust version to capture text from any element
     const traverse = (node) => {
         if (!node) return
@@ -208,6 +212,143 @@ export async function parseEpub(fileData) {
             Array.from(node.children).forEach(traverse)
         }
     }
+    */
+
+    // -----------------------------
+    // NEW TRAVERSE (smart chunking)
+    // -----------------------------
+    const MIN_PARAGRAPH_LENGTH = CONFIG.MIN_PARAGRAPH_LENGTH || 120
+    const SOFT_LIMIT = CONFIG.CHUNK_SIZE_LIMIT || 500
+    const HARD_LIMIT = CONFIG.MAX_CHUNK_LENGTH || SOFT_LIMIT
+
+    const isDialogueLine = (text) => {
+        if (!text) return false
+        return (
+            text.startsWith("—") ||
+            text.startsWith("-") ||
+            text.startsWith("“") ||
+            text.startsWith("\"") ||
+            text.endsWith(":")
+        )
+    }
+
+    const appendToBuffer = (text) => {
+        if (!text) return
+        if (buffer.text.length > 0) buffer.text += "\n\n"
+        buffer.text += text
+    }
+
+    const traverse = (node) => {
+        if (!node) return
+
+        const tagName = node.tagName ? node.tagName.toUpperCase() : ''
+
+        // Skip media
+        if (['IMG', 'IMAGE', 'SVG', 'VIDEO', 'AUDIO', 'IFRAME'].includes(tagName)) return
+
+        // HEADINGS: cut chapter + flush
+        if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(tagName)) {
+            const text = node.innerText ? node.innerText.trim() : ""
+            if (!text) return
+
+            flushBuffer(currentChapterTitle)
+
+            items.push({
+                id: `head-${idCounter++}`,
+                type: 'header',
+                content: text,
+                chapter: text,
+                bookTitle: bookTitle,
+                creator: creator
+            })
+
+            currentChapterTitle = text
+            return
+        }
+        /*
+        // PARAGRAPH-LIKE BLOCKS: smart grouping
+        if (['P', 'LI', 'BLOCKQUOTE'].includes(tagName)) {
+            const text = node.innerText ? node.innerText.trim() : ""
+            if (!text) return
+
+            const dialogue = isDialogueLine(text)
+
+            // If adding this would exceed HARD_LIMIT -> flush first
+            if (buffer.text.length + text.length > HARD_LIMIT) {
+                flushBuffer(currentChapterTitle)
+            }
+
+            appendToBuffer(text)
+
+            // If it's a long paragraph and not dialogue -> flush immediately
+            if (!dialogue && text.length >= MIN_PARAGRAPH_LENGTH) {
+                flushBuffer(currentChapterTitle)
+                return
+            }
+
+            // If we reached SOFT_LIMIT and it's not dialogue -> flush
+            if (!dialogue && buffer.text.length >= SOFT_LIMIT) {
+                flushBuffer(currentChapterTitle)
+                return
+            }
+
+            // If we reached HARD_LIMIT -> flush always
+            if (buffer.text.length >= HARD_LIMIT) {
+                flushBuffer(currentChapterTitle)
+            }
+
+            return
+        }
+        */
+        if (['P', 'LI', 'BLOCKQUOTE'].includes(tagName)) {
+            const text = node.innerText ? node.innerText.trim() : ""
+            if (!text) return
+
+            const dialogue = isDialogueLine(text)
+
+            // si esto rompe el hard limit, flush antes
+            if (buffer.text.length + text.length > HARD_LIMIT) {
+                flushBuffer(currentChapterTitle)
+            }
+
+            const hadBufferBefore = buffer.text.trim().length > 0
+
+            appendToBuffer(text)
+
+            // si entra un párrafo largo narrativo, que funcione como cierre del bloque
+            if (!dialogue && text.length >= MIN_PARAGRAPH_LENGTH) {
+                flushBuffer(currentChapterTitle)
+                return
+            }
+
+            // soft limit: flush si no es diálogo
+            if (!dialogue && buffer.text.length >= SOFT_LIMIT) {
+                flushBuffer(currentChapterTitle)
+                return
+            }
+
+            // hard limit: flush siempre
+            if (buffer.text.length >= HARD_LIMIT) {
+                flushBuffer(currentChapterTitle)
+            }
+
+            return
+        }
+
+        // CONTAINERS: recurse
+        if (['DIV', 'SECTION', 'ARTICLE', 'BODY'].includes(tagName)) {
+            if (node.children && node.children.length > 0) {
+                Array.from(node.children).forEach(traverse)
+            }
+            return
+        }
+
+        // fallback recursion
+        if (node.children && node.children.length > 0) {
+            Array.from(node.children).forEach(traverse)
+        }
+    }
+
 
     // Spine items processing
     const itemsToProcess = spine.spineItems || []
