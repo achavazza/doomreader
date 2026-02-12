@@ -6,6 +6,9 @@ export const CONFIG = {
     // Enable keyboard navigation with arrow keys (up/down) to navigate between chunks
     KEYBOARD_NAVIGATION: true,
 
+    // Automatically move the most recently read book to the top of the shelf
+    AUTO_SORT_BY_LAST_READ: true,
+
     // Header offset in pixels (37px title + 16px padding-top + 16px padding-bottom)
     HEADER_OFFSET: 69,
 

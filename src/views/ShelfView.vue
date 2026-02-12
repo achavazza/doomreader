@@ -111,7 +111,7 @@ const moveBook = (id, direction, e) => {
                             </div>
                             
                             <!-- Overlay Actions -->
-                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-end mb-4 justify-center gap-2">
+                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-end pb-4 justify-center gap-2">
                                  <button @click="moveBook(book.id, 'up', $event)" class="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition" title="Move Up">
                                     <ChevronUp class="w-4 h-4" />
                                  </button>

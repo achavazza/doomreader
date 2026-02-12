@@ -19,7 +19,7 @@ export async function parseDocx(fileData) {
     const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
     const html = result.value;
     const messages = result.messages;
-    if (DEBUG_MODE) { console.log("Mammoth messages:", messages); }
+    if (CONFIG.DEBUG_MODE) { console.log("Mammoth messages:", messages); }
 
     // Parse HTML to extract chunks
     const parser = new DOMParser();

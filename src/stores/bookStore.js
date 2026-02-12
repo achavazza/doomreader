@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, shallowRef, computed } from 'vue'
 import { storageService } from '../services/storageService'
 import { parseBook } from '../services/parserService'
+import { CONFIG } from '../config'
 
 export const useBookStore = defineStore('book', () => {
     const shelf = shallowRef([])
@@ -15,7 +16,22 @@ export const useBookStore = defineStore('book', () => {
     })
 
     const loadShelf = async () => {
-        const list = storageService.getShelf()
+        let list = storageService.getShelf()
+        
+        // Migrate books without order property
+        let needsMigration = false
+        list = list.map((book, index) => {
+            if (book.order === undefined) {
+                needsMigration = true
+                return { ...book, order: index }
+            }
+            return book
+        })
+        
+        if (needsMigration) {
+            storageService.saveShelf(list)
+        }
+        
         shelf.value = list
 
         // Background load covers
@@ -103,13 +119,28 @@ export const useBookStore = defineStore('book', () => {
             currentBookMetadata.value.lastReadIndex = index
         }
 
-        // Since shelf is shallowRef, we need to trigger a fresh assignment if we want reactivity on individual items in the shelf view, 
+        // Since shelf is shallowRef, we need to trigger a fresh assignment if we want reactivity on individual items in the shelf view,
         // but for ReaderView, we just need the local metadata to be updated.
         // For the shelf bar to update, we'd need: shelf.value = [...shelf.value]
         const idx = shelf.value.findIndex(b => b.id === bookId)
         if (idx !== -1) {
-            const newShelf = [...shelf.value]
+            let newShelf = [...shelf.value]
             newShelf[idx] = { ...newShelf[idx], lastReadIndex: index }
+            
+            // Move book to top if AUTO_SORT_BY_LAST_READ is enabled
+            if (CONFIG.AUTO_SORT_BY_LAST_READ && idx !== 0) {
+                // Remove book from current position
+                const [book] = newShelf.splice(idx, 1)
+                // Insert at the beginning
+                newShelf.unshift(book)
+                
+                // Recalculate order for all books
+                newShelf = newShelf.map((b, i) => ({ ...b, order: i }))
+                
+                // Save to storage
+                storageService.saveShelf(newShelf)
+            }
+            
             shelf.value = newShelf
         }
 
