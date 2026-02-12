@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import StickySidebar from '../components/StickySidebar.vue'
@@ -7,6 +7,7 @@ import Timeline from '../components/Timeline.vue'
 import { CONFIG } from '../config'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { ArrowLeft, ChevronUp, ChevronDown, Bookmark, List, Settings } from 'lucide-vue-next'
+import CustomScrollbar from '../components/CustomScrollbar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,7 +67,36 @@ const loadBookData = async () => {
     }
 }
 
-onMounted(loadBookData)
+// Keyboard navigation handler
+const handleKeydown = (e) => {
+    if (!CONFIG.KEYBOARD_NAVIGATION) return
+    if (!initialScrollComplete.value || isNavigating.value) return
+    
+    if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        if (currentIndex.value > 0) {
+            scrollTo(currentIndex.value - 1)
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (currentIndex.value < chunks.value.length - 1) {
+            scrollTo(currentIndex.value + 1)
+        }
+    }
+}
+
+onMounted(() => {
+    loadBookData()
+    if (CONFIG.KEYBOARD_NAVIGATION) {
+        window.addEventListener('keydown', handleKeydown)
+    }
+})
+
+onUnmounted(() => {
+    if (CONFIG.KEYBOARD_NAVIGATION) {
+        window.removeEventListener('keydown', handleKeydown)
+    }
+})
 
 const onVisibleIndexChange = (index) => {
     // Only update state if we are done with the initial scroll dance and NOT navigating
@@ -155,7 +185,7 @@ const scrollTo = async (index) => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-black text-white flex justify-center selection:bg-blue-500/30 pb-20"> <!-- Added pb-20 for footer space -->
+    <div class="h-screen bg-black text-white flex justify-center selection:bg-blue-500/30 overflow-hidden"> <!-- VList scroll layout -->
         <!-- Persistent Sidebar -->
         <StickySidebar 
             :current-index="currentIndex"
@@ -212,7 +242,7 @@ const scrollTo = async (index) => {
         </div>
 
         <!-- New Mobile/Fixed Footer -->
-        <div class="fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-t border-gray-800 px-4 py-3 flex lg:hidden flex-col gap-2 shadow-2xl safe-area-pb">
+        <div class="fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-t border-gray-800 px-4 pt-3 pb-2 flex lg:hidden flex-col gap-2 shadow-2xl">
             <!-- Progress Bar -->
             <div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
                 <div 
@@ -263,13 +293,18 @@ const scrollTo = async (index) => {
                      <Bookmark class="w-3 h-3" />
                      <span class="text-xs font-mono">{{ bookmarksCount }}</span>
                  </div>
-            </div>
-        </div>
-    </div>
-</template>
-
-<style scoped>
-.safe-area-pb {
-    padding-bottom: calc(1.2rem + env(safe-area-inset-bottom));
-}
-</style>
+             </div>
+         </div>
+     </div>
+ 
+     <!-- Custom Scrollbar (Desktop Only) -->
+     <CustomScrollbar
+         :current-index="currentIndex"
+         :total-chunks="chunks.length"
+         @scroll-to-index="scrollTo"
+     />
+ </template>
+ 
+ <style scoped>
+ /* VList with custom scrollbar */
+ </style>

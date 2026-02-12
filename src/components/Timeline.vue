@@ -194,22 +194,21 @@ watch(() => props.chunks, () => {
   <VList
     ref="scroller"
     :data="chunks"
-    :style="{ 
-      //marginTop: `${HEADER_OFFSET}px`,
-      //height: `calc(100vh - ${HEADER_OFFSET}px)`,
+    :style="{
+      height: 'calc(100vh - 69px)',
       overflowY: 'auto'
     }"
     class="w-full scrollbar-hide"
     @scroll="onScroll"
   >
     <template #default="{ item, index }">
-      <div 
+      <div
         class="chunk-card-wrapper"
         :data-index="index"
         :style="{ scrollMarginTop: `${HEADER_OFFSET}px` }"
       >
-        <BookCard 
-          :item="item" 
+        <BookCard
+          :item="item"
           :index="index"
           :is-bookmarked="bookmarks.includes(item.id)"
           class="chunk-card"
@@ -237,5 +236,5 @@ watch(() => props.chunks, () => {
     -ms-overflow-style: none;
     scrollbar-width: none;
 }
-/* Dynamic scroll-margin-top applied via inline style to match HEADER_OFFSET */
+/* VList with hidden scrollbar - scroll detection working */
 </style>
